@@ -2,6 +2,10 @@
 
 A Spring Boot 3.2.3 application providing secure financial record management with role-based access control.
 
+## Internship Submission Note
+- The backend (`finance-dashboard`) is the primary internship submission scope.
+- The frontend (`frontend`) is included only as an additional/optional enhancement for demo and integration.
+
 ## Features
 - JWT authentication with access + refresh tokens
 - User roles: VIEWER, ANALYST, ADMIN
