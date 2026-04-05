@@ -15,32 +15,43 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenServiceImpl implements RefreshTokenService {
 
+    private static final int LOCK_BUCKETS = 256;
+
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
+    private final Object[] refreshTokenLocks = IntStream.range(0, LOCK_BUCKETS)
+            .mapToObj(i -> new Object())
+            .toArray(Object[]::new);
 
     @Override
     @Transactional
     public RefreshToken createRefreshToken(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        synchronized (resolveLock(userId)) {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        // Delete existing refresh token for user
-        refreshTokenRepository.deleteByUser(user);
-        // Flush delete immediately to avoid unique constraint races on user_id in same transaction.
-        refreshTokenRepository.flush();
+            Optional<RefreshToken> existingToken = refreshTokenRepository.findByUser(user);
+            if (existingToken.isPresent()) {
+                RefreshToken refreshToken = existingToken.get();
+                refreshToken.setToken(UUID.randomUUID().toString());
+                refreshToken.setExpiryDate(Instant.now().plus(7, ChronoUnit.DAYS));
+                return refreshTokenRepository.save(refreshToken);
+            }
 
-        RefreshToken refreshToken = RefreshToken.builder()
-                .token(UUID.randomUUID().toString())
-                .user(user)
-                .expiryDate(Instant.now().plus(7, ChronoUnit.DAYS))
-                .build();
+            RefreshToken refreshToken = RefreshToken.builder()
+                    .token(UUID.randomUUID().toString())
+                    .user(user)
+                    .expiryDate(Instant.now().plus(7, ChronoUnit.DAYS))
+                    .build();
 
-        return refreshTokenRepository.save(refreshToken);
+            return refreshTokenRepository.save(refreshToken);
+        }
     }
 
     @Override
@@ -63,6 +74,10 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Override
     public Optional<RefreshToken> findByToken(String token) {
         return refreshTokenRepository.findByToken(token);
+    }
+
+    private Object resolveLock(Long userId) {
+        return refreshTokenLocks[Math.floorMod(userId.hashCode(), LOCK_BUCKETS)];
     }
 
 }
