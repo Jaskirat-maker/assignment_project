@@ -4,6 +4,7 @@ import {
   getStoredSession,
   saveStoredSession,
 } from '../utils/storage'
+import { runtimeConfig } from './runtimeConfig'
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
 
@@ -15,6 +16,10 @@ const apiClient = axios.create({
 })
 
 apiClient.interceptors.request.use((config) => {
+  if (runtimeConfig.useMockApi) {
+    return config
+  }
+
   const session = getStoredSession()
 
   if (session?.token) {
@@ -28,6 +33,10 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (runtimeConfig.useMockApi) {
+      throw error
+    }
+
     const originalRequest = error.config
     const session = getStoredSession()
 

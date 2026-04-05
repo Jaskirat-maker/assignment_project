@@ -1,16 +1,32 @@
-# React + Vite
+# Finance Dashboard Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React frontend for the Spring Boot finance APIs.
 
-Currently, two official plugins are available:
+## Stack
+- React + Vite
+- Tailwind CSS (v4 via `@tailwindcss/vite`)
+- Recharts
+- Axios + React Router
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Run
+1. Install dependencies:
+   - `npm install`
+2. Start dev server (required by task):
+   - `npm start`
 
-## React Compiler
+The frontend runs on `http://localhost:3000` and proxies `/api/*` to `http://localhost:8080`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## API Integration
+- Login: `POST /api/v1/auth/login`
+- Register: `POST /api/v1/auth/register`
+- Dashboard summary: `GET /api/v1/dashboard/summary`
+- Financial records: `GET /api/v1/records`
 
-## Expanding the ESLint configuration
+JWT access token is sent in the `Authorization: Bearer <token>` header. Refresh tokens are used for automatic token rotation on `401`.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Optional Mock Mode (frontend-only fallback)
+If backend is unavailable locally, you can still run UI flows in a mock mode:
+- Create `.env.local` with: `VITE_USE_MOCK=true`
+- Run: `npm start`
+
+When mock mode is disabled (default), all calls use the real backend APIs.

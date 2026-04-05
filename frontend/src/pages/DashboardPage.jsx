@@ -4,7 +4,7 @@ import ChartsSection from '../components/dashboard/ChartsSection'
 import SummaryCards from '../components/dashboard/SummaryCards'
 import TransactionsTable from '../components/dashboard/TransactionsTable'
 import AppLayout from '../components/layout/AppLayout'
-import { useAuth } from '../context/AuthContext'
+import useAuth from '../context/useAuth'
 import {
   getDashboardSummary,
   getFinancialRecords,
