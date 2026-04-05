@@ -6,6 +6,7 @@ A Spring Boot 3.2.3 application providing secure financial record management wit
 - API reference: `docs/API_DOCUMENTATION.md`
 - System design: `docs/SYSTEM_DESIGN.md`
 - End-to-end workflow: `docs/WORKFLOW.md`
+- Internship submission brief: `docs/INTERNSHIP_SUBMISSION.md`
 
 ## Features
 - JWT authentication with access + refresh tokens
