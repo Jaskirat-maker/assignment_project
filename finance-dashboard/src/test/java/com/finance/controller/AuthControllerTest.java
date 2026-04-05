@@ -5,6 +5,7 @@ import com.finance.dto.request.LoginRequest;
 import com.finance.dto.request.RefreshTokenRequest;
 import com.finance.dto.request.RegisterRequest;
 import com.finance.dto.response.JwtResponse;
+import com.finance.config.RateLimitProperties;
 import com.finance.service.AuthService;
 import com.finance.security.JwtTokenProvider;
 import com.finance.service.RefreshTokenService;
@@ -40,6 +41,9 @@ class AuthControllerTest {
 
     @MockBean
     private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+
+    @MockBean
+    private RateLimitProperties rateLimitProperties;
 
     @Autowired
     private ObjectMapper objectMapper;
