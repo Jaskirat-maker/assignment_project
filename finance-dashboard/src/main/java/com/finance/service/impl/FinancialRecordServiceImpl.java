@@ -2,10 +2,10 @@ package com.finance.service.impl;
 
 import com.finance.dto.request.FinancialRecordRequest;
 import com.finance.dto.response.FinancialRecordResponse;
+import com.finance.dto.response.UserSummary;
 import com.finance.entity.FinancialRecord;
 import com.finance.entity.User;
 import com.finance.entity.enums.TransactionType;
-import com.finance.exception.BadRequestException;
 import com.finance.exception.ResourceNotFoundException;
 import com.finance.repository.FinancialRecordRepository;
 import com.finance.repository.UserRepository;
@@ -17,11 +17,11 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import com.finance.dto.response.UserSummary;
 
 @Service
 @RequiredArgsConstructor
@@ -61,7 +61,7 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
                 .orElseThrow(() -> new ResourceNotFoundException("Financial record not found with id: " + id));
 
         if (!record.getUser().getUsername().equals(username)) {
-            throw new BadRequestException("Access denied");
+            throw new AccessDeniedException("You are not allowed to access this financial record");
         }
 
         return mapToResponse(record);
@@ -112,7 +112,7 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (!record.getUser().getUsername().equals(username)) {
-            throw new BadRequestException("Access denied");
+            throw new AccessDeniedException("You are not allowed to update this financial record");
         }
 
         record.setTitle(request.getTitle());
@@ -139,7 +139,7 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (!record.getUser().getUsername().equals(username)) {
-            throw new BadRequestException("Access denied");
+            throw new AccessDeniedException("You are not allowed to delete this financial record");
         }
 
         record.softDelete(user);

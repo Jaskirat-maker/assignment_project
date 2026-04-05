@@ -5,7 +5,6 @@ import com.finance.dto.response.FinancialRecordResponse;
 import com.finance.entity.FinancialRecord;
 import com.finance.entity.User;
 import com.finance.entity.enums.TransactionType;
-import com.finance.exception.BadRequestException;
 import com.finance.exception.ResourceNotFoundException;
 import com.finance.repository.FinancialRecordRepository;
 import com.finance.repository.UserRepository;
@@ -16,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -117,7 +117,7 @@ class FinancialRecordServiceImplTest {
     }
 
     @Test
-    void getRecordById_ShouldThrowBadRequestException_WhenRecordBelongsToDifferentUser() {
+    void getRecordById_ShouldThrowAccessDeniedException_WhenRecordBelongsToDifferentUser() {
         // Given
         User differentUser = User.builder().username("otheruser").build();
         FinancialRecord differentRecord = FinancialRecord.builder().user(differentUser).build();
@@ -125,8 +125,8 @@ class FinancialRecordServiceImplTest {
 
         // When & Then
         assertThatThrownBy(() -> financialRecordService.getRecordById(1L, "testuser"))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessage("Access denied");
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("You are not allowed to access this financial record");
     }
 
     @Test
@@ -154,7 +154,7 @@ class FinancialRecordServiceImplTest {
     }
 
     @Test
-    void deleteRecord_ShouldThrowBadRequestException_WhenUnauthorized() {
+    void deleteRecord_ShouldThrowAccessDeniedException_WhenUnauthorized() {
         // Given
         User differentUser = User.builder().username("otheruser").build();
         FinancialRecord differentRecord = FinancialRecord.builder().user(differentUser).build();
@@ -163,8 +163,8 @@ class FinancialRecordServiceImplTest {
 
         // When & Then
         assertThatThrownBy(() -> financialRecordService.deleteRecord(1L, "testuser"))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessage("Access denied");
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("You are not allowed to delete this financial record");
     }
 
     @Test
