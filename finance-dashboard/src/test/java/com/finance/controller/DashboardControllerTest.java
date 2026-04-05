@@ -1,20 +1,21 @@
 package com.finance.controller;
 
 import com.finance.dto.response.DashboardSummaryResponse;
-import com.finance.security.CustomUserDetailsService;
+import com.finance.dto.response.FinancialRecordResponse;
+import com.finance.config.RateLimitProperties;
 import com.finance.security.JwtTokenProvider;
 import com.finance.service.DashboardService;
+import com.finance.service.RefreshTokenService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.Mockito.when;
@@ -23,7 +24,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(DashboardController.class)
-@Import(com.finance.security.SecurityConfig.class)
 class DashboardControllerTest {
 
     @Autowired
@@ -36,7 +36,10 @@ class DashboardControllerTest {
     private JwtTokenProvider jwtTokenProvider;
 
     @MockBean
-    private CustomUserDetailsService customUserDetailsService;
+    private RefreshTokenService refreshTokenService;
+
+    @MockBean
+    private RateLimitProperties rateLimitProperties;
 
     @Test
     @WithMockUser(username = "testuser", authorities = {"VIEWER"})
@@ -46,7 +49,7 @@ class DashboardControllerTest {
                 .totalExpense(BigDecimal.valueOf(500))
                 .netBalance(BigDecimal.valueOf(500))
                 .categoryWiseTotals(Map.of("Salary", BigDecimal.valueOf(100)))
-                .recentTransactions(Collections.emptyList())
+                .recentTransactions(List.of(FinancialRecordResponse.builder().id(1L).title("Salary").build()))
                 .weeklyTrends(Map.of("Week 1", BigDecimal.valueOf(250)))
                 .build();
 
@@ -66,7 +69,7 @@ class DashboardControllerTest {
     void getDashboardSummary_ShouldReturn401_ForUnauthorized() throws Exception {
         mockMvc.perform(get("/api/v1/dashboard/summary")
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
 }

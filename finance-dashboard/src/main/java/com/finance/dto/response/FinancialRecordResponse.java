@@ -32,4 +32,10 @@ public class FinancialRecordResponse {
 
     private LocalDateTime createdAt;
 
+    private LocalDateTime updatedAt;
+
+    private UserSummary createdBy;
+
+    private UserSummary updatedBy;
+
 }

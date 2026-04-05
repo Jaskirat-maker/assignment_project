@@ -3,6 +3,8 @@ package com.finance.entity;
 import com.finance.entity.enums.TransactionType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -12,6 +14,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "financial_records")
+@SQLDelete(sql = "UPDATE financial_records SET deleted = true, deleted_at = CURRENT_TIMESTAMP WHERE id=?")
+@Where(clause = "deleted = false")
 @Getter
 @Setter
 @Builder
@@ -50,8 +54,28 @@ public class FinancialRecord {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean deleted = false;
+
+    private LocalDateTime deletedAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private User createdBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "updated_by")
+    private User updatedBy;
+
+    public void softDelete(User actor) {
+        this.deleted = true;
+        this.deletedAt = LocalDateTime.now();
+        this.updatedBy = actor;
+    }
 
 }

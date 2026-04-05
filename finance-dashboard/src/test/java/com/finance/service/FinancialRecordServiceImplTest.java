@@ -5,7 +5,6 @@ import com.finance.dto.response.FinancialRecordResponse;
 import com.finance.entity.FinancialRecord;
 import com.finance.entity.User;
 import com.finance.entity.enums.TransactionType;
-import com.finance.exception.BadRequestException;
 import com.finance.exception.ResourceNotFoundException;
 import com.finance.repository.FinancialRecordRepository;
 import com.finance.repository.UserRepository;
@@ -16,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -31,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -105,7 +106,7 @@ class FinancialRecordServiceImplTest {
     @Test
     void getRecordById_ShouldReturnRecord_WhenRecordBelongsToUser() {
         // Given
-        when(financialRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+        when(financialRecordRepository.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(record));
 
         // When
         FinancialRecordResponse response = financialRecordService.getRecordById(1L, "testuser");
@@ -116,22 +117,22 @@ class FinancialRecordServiceImplTest {
     }
 
     @Test
-    void getRecordById_ShouldThrowBadRequestException_WhenRecordBelongsToDifferentUser() {
+    void getRecordById_ShouldThrowAccessDeniedException_WhenRecordBelongsToDifferentUser() {
         // Given
         User differentUser = User.builder().username("otheruser").build();
         FinancialRecord differentRecord = FinancialRecord.builder().user(differentUser).build();
-        when(financialRecordRepository.findById(1L)).thenReturn(Optional.of(differentRecord));
+        when(financialRecordRepository.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(differentRecord));
 
         // When & Then
         assertThatThrownBy(() -> financialRecordService.getRecordById(1L, "testuser"))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessage("Access denied");
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("You are not allowed to access this financial record");
     }
 
     @Test
     void getRecordById_ShouldThrowResourceNotFoundException_WhenRecordNotFound() {
         // Given
-        when(financialRecordRepository.findById(1L)).thenReturn(Optional.empty());
+        when(financialRecordRepository.findByIdAndDeletedFalse(1L)).thenReturn(Optional.empty());
 
         // When & Then
         assertThatThrownBy(() -> financialRecordService.getRecordById(1L, "testuser"))
@@ -142,26 +143,28 @@ class FinancialRecordServiceImplTest {
     @Test
     void deleteRecord_ShouldCallRepositoryDelete_WhenAuthorized() {
         // Given
-        when(financialRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+        when(financialRecordRepository.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(record));
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
 
         // When
         financialRecordService.deleteRecord(1L, "testuser");
 
         // Then
-        verify(financialRecordRepository).delete(record);
+        verify(financialRecordRepository).save(record);
     }
 
     @Test
-    void deleteRecord_ShouldThrowBadRequestException_WhenUnauthorized() {
+    void deleteRecord_ShouldThrowAccessDeniedException_WhenUnauthorized() {
         // Given
         User differentUser = User.builder().username("otheruser").build();
         FinancialRecord differentRecord = FinancialRecord.builder().user(differentUser).build();
-        when(financialRecordRepository.findById(1L)).thenReturn(Optional.of(differentRecord));
+        when(financialRecordRepository.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(differentRecord));
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
 
         // When & Then
         assertThatThrownBy(() -> financialRecordService.deleteRecord(1L, "testuser"))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessage("Access denied");
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("You are not allowed to delete this financial record");
     }
 
     @Test
@@ -173,7 +176,7 @@ class FinancialRecordServiceImplTest {
         when(financialRecordRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
 
         // When
-        var response = financialRecordService.getAllRecordsByUser("testuser", null, null, null, null, pageable);
+        var response = financialRecordService.getAllRecordsByUser("testuser", null, null, null, null, null, pageable);
 
         // Then
         assertThat(response).isNotNull();

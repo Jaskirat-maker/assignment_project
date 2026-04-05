@@ -2,7 +2,6 @@ package com.finance.repository;
 
 import com.finance.entity.FinancialRecord;
 import com.finance.entity.User;
-import com.finance.entity.enums.Role;
 import com.finance.entity.enums.TransactionType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +31,7 @@ class FinancialRecordRepositoryTest {
                 .username("testuser")
                 .email("test@example.com")
                 .password("password")
-                .role(Role.ANALYST)
+                .role(com.finance.entity.enums.Role.ANALYST)
                 .build();
         entityManager.persist(user);
     }
@@ -178,7 +177,8 @@ class FinancialRecordRepositoryTest {
         entityManager.flush();
 
         // When
-        var records = financialRecordRepository.findByUserIdAndTransactionDateBetween(user.getId(), startDate, endDate);
+        var records = financialRecordRepository
+                .findByUserIdAndTransactionDateBetweenAndDeletedFalse(user.getId(), startDate, endDate);
 
         // Then
         assertThat(records).hasSize(1);

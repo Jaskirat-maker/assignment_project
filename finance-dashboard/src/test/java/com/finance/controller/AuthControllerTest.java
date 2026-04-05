@@ -5,25 +5,26 @@ import com.finance.dto.request.LoginRequest;
 import com.finance.dto.request.RefreshTokenRequest;
 import com.finance.dto.request.RegisterRequest;
 import com.finance.dto.response.JwtResponse;
-import com.finance.security.CustomUserDetailsService;
-import com.finance.security.JwtTokenProvider;
+import com.finance.config.RateLimitProperties;
 import com.finance.service.AuthService;
+import com.finance.security.JwtTokenProvider;
+import com.finance.service.RefreshTokenService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
-@Import(com.finance.security.SecurityConfig.class)
+@WithMockUser(username = "testuser")
 class AuthControllerTest {
 
     @Autowired
@@ -36,8 +37,13 @@ class AuthControllerTest {
     private JwtTokenProvider jwtTokenProvider;
 
     @MockBean
-    private CustomUserDetailsService customUserDetailsService;
+    private RefreshTokenService refreshTokenService;
 
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+
+    @MockBean
+    private RateLimitProperties rateLimitProperties;
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -54,7 +60,7 @@ class AuthControllerTest {
                 .token("jwtToken")
                 .username("testuser")
                 .email("test@example.com")
-                .role("ANALYST")
+                .primaryRole("ANALYST")
                 .build();
 
         when(authService.register(any(RegisterRequest.class))).thenReturn(response);
@@ -63,7 +69,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))
-                .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .with(csrf()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.token").value("jwtToken"))
                 .andExpect(jsonPath("$.username").value("testuser"));
@@ -82,7 +88,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))
-                .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -99,7 +105,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))
-                .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -116,7 +122,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))
-                .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -139,7 +145,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))
-                .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("jwtToken"));
     }
@@ -156,7 +162,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))
-                .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -179,7 +185,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/v1/auth/refresh")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))
-                .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("newJwtToken"))
                 .andExpect(jsonPath("$.refreshToken").value("newRefreshToken"));
@@ -187,28 +193,31 @@ class AuthControllerTest {
 
     @Test
     void logout_ShouldReturn200_WhenAuthenticated() throws Exception {
+        // No service stubbing required for logout in this mock setup
+
         mockMvc.perform(post("/api/v1/auth/logout")
-                .with(SecurityMockMvcRequestPostProcessors.user("testuser"))
-                .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("testuser"))
+                .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Logged out successfully"));
     }
 
     @Test
-    void login_ShouldReturn400_WhenInvalidCredentials() throws Exception {
+    void login_ShouldReturn401_WhenInvalidCredentials() throws Exception {
         LoginRequest request = LoginRequest.builder()
                 .username("baduser")
                 .password("wrongpass")
                 .build();
 
-        when(authService.login(any(LoginRequest.class))).thenThrow(new com.finance.exception.BadRequestException("Invalid credentials"));
+        when(authService.login(any(LoginRequest.class)))
+                .thenThrow(new com.finance.exception.AuthenticationFailureException("Invalid username or password"));
 
         mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))
-                .with(SecurityMockMvcRequestPostProcessors.csrf()))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Invalid credentials"));
+                .with(csrf()))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTHENTICATION_FAILED"));
     }
 
 }
