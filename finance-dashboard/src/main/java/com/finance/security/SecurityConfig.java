@@ -1,9 +1,11 @@
 package com.finance.security;
 
-import lombok.RequiredArgsConstructor;
+import com.finance.config.RateLimitProperties;
 import com.finance.filter.RateLimitingFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -19,6 +21,7 @@ import java.util.Arrays;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@EnableConfigurationProperties(RateLimitProperties.class)
 @RequiredArgsConstructor
 public class SecurityConfig {
 

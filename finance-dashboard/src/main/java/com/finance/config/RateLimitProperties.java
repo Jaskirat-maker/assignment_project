@@ -9,7 +9,6 @@ import org.springframework.validation.annotation.Validated;
 import java.util.ArrayList;
 import java.util.List;
 
-@Component
 @Validated
 @Data
 @ConfigurationProperties(prefix = "app.rate-limit")
