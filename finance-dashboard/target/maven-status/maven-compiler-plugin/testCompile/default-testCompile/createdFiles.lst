@@ -1,0 +1,8 @@
+com/finance/controller/AuthControllerTest.class
+com/finance/FinanceDashboardIntegrationTest.class
+com/finance/service/FinancialRecordServiceImplTest.class
+com/finance/controller/DashboardControllerTest.class
+com/finance/controller/FinancialRecordControllerTest.class
+com/finance/service/AuthServiceImplTest.class
+com/finance/repository/FinancialRecordRepositoryTest.class
+com/finance/service/DashboardServiceImplTest.class

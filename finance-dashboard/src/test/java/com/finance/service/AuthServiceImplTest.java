@@ -6,6 +6,7 @@ import com.finance.dto.response.JwtResponse;
 import com.finance.entity.User;
 import com.finance.entity.enums.Role;
 import com.finance.exception.BadRequestException;
+import com.finance.entity.RefreshToken;
 import com.finance.repository.UserRepository;
 import com.finance.security.JwtTokenProvider;
 import com.finance.service.impl.AuthServiceImpl;
@@ -42,6 +43,9 @@ class AuthServiceImplTest {
 
     @Mock
     private JwtTokenProvider jwtTokenProvider;
+
+    @Mock
+    private RefreshTokenService refreshTokenService;
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -81,6 +85,8 @@ class AuthServiceImplTest {
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(jwtTokenProvider.generateToken(anyString())).thenReturn("jwtToken");
+        RefreshToken refreshToken = RefreshToken.builder().token("refreshToken").build();
+        when(refreshTokenService.createRefreshToken(any())).thenReturn(refreshToken);
 
         // When
         JwtResponse response = authService.register(registerRequest);
@@ -125,6 +131,8 @@ class AuthServiceImplTest {
                 .thenReturn(authentication);
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
         when(jwtTokenProvider.generateToken("testuser")).thenReturn("jwtToken");
+        RefreshToken refreshToken = RefreshToken.builder().token("refreshToken").build();
+        when(refreshTokenService.createRefreshToken(any())).thenReturn(refreshToken);
 
         // When
         JwtResponse response = authService.login(loginRequest);

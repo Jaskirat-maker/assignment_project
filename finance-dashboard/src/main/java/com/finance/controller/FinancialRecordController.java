@@ -30,7 +30,7 @@ public class FinancialRecordController {
     private final CsvExportService csvExportService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ANALYST','ADMIN')")
     public ResponseEntity<FinancialRecordResponse> createRecord(@Valid @RequestBody FinancialRecordRequest request, Authentication authentication) {
         String username = authentication.getName();
         log.info("Creating financial record for user {}", username);
@@ -61,7 +61,7 @@ public class FinancialRecordController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ANALYST','ADMIN')")
     public ResponseEntity<FinancialRecordResponse> updateRecord(@PathVariable Long id, @Valid @RequestBody FinancialRecordRequest request, Authentication authentication) {
         String username = authentication.getName();
         FinancialRecordResponse response = financialRecordService.updateRecord(id, request, username);
@@ -69,7 +69,7 @@ public class FinancialRecordController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ANALYST','ADMIN')")
     public ResponseEntity<Void> deleteRecord(@PathVariable Long id, Authentication authentication) {
         String username = authentication.getName();
         financialRecordService.deleteRecord(id, username);

@@ -48,11 +48,15 @@ class DashboardServiceImplTest {
         FinancialRecord incomeRecord = FinancialRecord.builder()
                 .amount(BigDecimal.valueOf(1000.00))
                 .type(TransactionType.INCOME)
+                .transactionDate(LocalDate.now())
+                .category("Salary")
                 .build();
 
         FinancialRecord expenseRecord = FinancialRecord.builder()
                 .amount(BigDecimal.valueOf(500.00))
                 .type(TransactionType.EXPENSE)
+                .transactionDate(LocalDate.now())
+                .category("Food")
                 .build();
 
         records = List.of(incomeRecord, expenseRecord);
