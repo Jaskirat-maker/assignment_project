@@ -1,0 +1,8 @@
+/workspace/finance-dashboard/src/test/java/com/finance/repository/FinancialRecordRepositoryTest.java
+/workspace/finance-dashboard/src/test/java/com/finance/service/AuthServiceImplTest.java
+/workspace/finance-dashboard/src/test/java/com/finance/service/FinancialRecordServiceImplTest.java
+/workspace/finance-dashboard/src/test/java/com/finance/controller/FinancialRecordControllerTest.java
+/workspace/finance-dashboard/src/test/java/com/finance/service/DashboardServiceImplTest.java
+/workspace/finance-dashboard/src/test/java/com/finance/FinanceDashboardIntegrationTest.java
+/workspace/finance-dashboard/src/test/java/com/finance/controller/AuthControllerTest.java
+/workspace/finance-dashboard/src/test/java/com/finance/controller/DashboardControllerTest.java
