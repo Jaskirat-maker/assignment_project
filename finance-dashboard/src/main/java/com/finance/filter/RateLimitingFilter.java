@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Component
@@ -39,6 +40,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     private final ConcurrentHashMap<String, CounterWindow> clientWindows = new ConcurrentHashMap<>();
     private final CounterWindow globalWindow = new CounterWindow();
     private final AtomicLong lastCleanupEpochSecond = new AtomicLong(0);
+    private final AtomicInteger inFlightRequests = new AtomicInteger(0);
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -48,49 +50,69 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             return;
         }
 
+        int currentInFlight = inFlightRequests.incrementAndGet();
+        if (currentInFlight > rateLimitProperties.getMaxConcurrentRequests()) {
+            inFlightRequests.decrementAndGet();
+            writeTooManyRequests(
+                    response,
+                    new CounterResult(false, 0, 1),
+                    rateLimitProperties.getMaxConcurrentRequests(),
+                    "concurrency"
+            );
+            return;
+        }
+
         long nowEpochSecond = System.currentTimeMillis() / 1000;
-        cleanupOldClientWindows(nowEpochSecond);
+        try {
+            cleanupOldClientWindows(nowEpochSecond);
 
-        CounterResult globalCounter = globalWindow.incrementAndCheck(
-                nowEpochSecond,
-                rateLimitProperties.getMaxGlobalRequests(),
-                rateLimitProperties.getWindowSeconds()
-        );
-
-        if (!globalCounter.allowed()) {
-            writeTooManyRequests(
-                    response,
-                    globalCounter,
+            CounterResult globalCounter = globalWindow.incrementAndCheck(
+                    nowEpochSecond,
                     rateLimitProperties.getMaxGlobalRequests(),
-                    "global"
+                    rateLimitProperties.getWindowSeconds()
             );
-            return;
-        }
 
-        String clientKey = resolveClientKey(request);
-        CounterWindow clientWindow = clientWindows.computeIfAbsent(clientKey, key -> new CounterWindow());
-        CounterResult clientCounter = clientWindow.incrementAndCheck(
-                nowEpochSecond,
-                rateLimitProperties.getMaxRequestsPerClient(),
-                rateLimitProperties.getWindowSeconds()
-        );
+            if (!globalCounter.allowed()) {
+                writeTooManyRequests(
+                        response,
+                        globalCounter,
+                        rateLimitProperties.getMaxGlobalRequests(),
+                        "global"
+                );
+                return;
+            }
 
-        if (!clientCounter.allowed()) {
-            log.warn("Rate limit exceeded for key={} path={} method={}", clientKey, request.getRequestURI(), request.getMethod());
-            writeTooManyRequests(
-                    response,
-                    clientCounter,
+            String clientKey = resolveClientKey(request);
+            CounterWindow clientWindow = clientWindows.computeIfAbsent(clientKey, key -> new CounterWindow());
+            CounterResult clientCounter = clientWindow.incrementAndCheck(
+                    nowEpochSecond,
                     rateLimitProperties.getMaxRequestsPerClient(),
-                    "client"
+                    rateLimitProperties.getWindowSeconds()
             );
-            return;
+
+            if (!clientCounter.allowed()) {
+                log.warn("Rate limit exceeded for key={} path={} method={}", clientKey, request.getRequestURI(), request.getMethod());
+                writeTooManyRequests(
+                        response,
+                        clientCounter,
+                        rateLimitProperties.getMaxRequestsPerClient(),
+                        "client"
+                );
+                return;
+            }
+
+            response.setHeader("X-RateLimit-Limit", String.valueOf(rateLimitProperties.getMaxRequestsPerClient()));
+            response.setHeader("X-RateLimit-Remaining", String.valueOf(clientCounter.remaining()));
+            response.setHeader("X-RateLimit-Reset", String.valueOf(clientCounter.retryAfterSeconds()));
+            response.setHeader("X-RateLimit-Concurrency-Limit", String.valueOf(rateLimitProperties.getMaxConcurrentRequests()));
+            response.setHeader("X-RateLimit-Concurrency-Remaining", String.valueOf(
+                    Math.max(rateLimitProperties.getMaxConcurrentRequests() - currentInFlight, 0)
+            ));
+
+            filterChain.doFilter(request, response);
+        } finally {
+            inFlightRequests.decrementAndGet();
         }
-
-        response.setHeader("X-RateLimit-Limit", String.valueOf(rateLimitProperties.getMaxRequestsPerClient()));
-        response.setHeader("X-RateLimit-Remaining", String.valueOf(clientCounter.remaining()));
-        response.setHeader("X-RateLimit-Reset", String.valueOf(clientCounter.retryAfterSeconds()));
-
-        filterChain.doFilter(request, response);
     }
 
     private boolean shouldRateLimit(HttpServletRequest request) {

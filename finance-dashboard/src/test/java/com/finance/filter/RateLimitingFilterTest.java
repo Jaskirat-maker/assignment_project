@@ -24,6 +24,7 @@ class RateLimitingFilterTest {
         properties.setEnabled(true);
         properties.setMaxRequestsPerClient(2);
         properties.setMaxGlobalRequests(1000);
+        properties.setMaxConcurrentRequests(10);
         properties.setWindowSeconds(60);
         properties.setIncludePaths(java.util.List.of("/api/**"));
 
@@ -79,5 +80,47 @@ class RateLimitingFilterTest {
 
         assertEquals(HttpStatus.OK.value(), response.getStatus());
         assertNull(response.getHeader("X-RateLimit-Limit"));
+    }
+
+    @Test
+    void shouldReturn429WhenConcurrencyLimitExceeded() throws Exception {
+        RateLimitProperties properties = new RateLimitProperties();
+        properties.setEnabled(true);
+        properties.setMaxRequestsPerClient(1000);
+        properties.setMaxGlobalRequests(1000);
+        properties.setMaxConcurrentRequests(1);
+        properties.setWindowSeconds(60);
+        properties.setIncludePaths(java.util.List.of("/api/**"));
+        RateLimitingFilter filter = new RateLimitingFilter(properties, new ObjectMapper().findAndRegisterModules());
+
+        MockHttpServletRequest firstRequest = new MockHttpServletRequest("GET", "/api/v1/auth/login");
+        MockHttpServletResponse firstResponse = new MockHttpServletResponse();
+        MockFilterChain slowChain = new MockFilterChain() {
+            @Override
+            public void doFilter(jakarta.servlet.ServletRequest request, jakarta.servlet.ServletResponse response) {
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        };
+
+        Thread firstThread = new Thread(() -> {
+            try {
+                filter.doFilter(firstRequest, firstResponse, slowChain);
+            } catch (Exception ignored) {
+            }
+        });
+        firstThread.start();
+        Thread.sleep(50);
+
+        MockHttpServletRequest secondRequest = new MockHttpServletRequest("GET", "/api/v1/auth/login");
+        MockHttpServletResponse secondResponse = new MockHttpServletResponse();
+        filter.doFilter(secondRequest, secondResponse, new MockFilterChain());
+
+        firstThread.join();
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS.value(), secondResponse.getStatus());
+        assertEquals("concurrency", secondResponse.getHeader("X-RateLimit-Scope"));
     }
 }

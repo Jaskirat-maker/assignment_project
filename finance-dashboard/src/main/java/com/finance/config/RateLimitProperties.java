@@ -23,6 +23,9 @@ public class RateLimitProperties {
     private int maxGlobalRequests = 5000;
 
     @Min(1)
+    private int maxConcurrentRequests = 200;
+
+    @Min(1)
     private long windowSeconds = 60;
 
     private List<String> includePaths = new ArrayList<>(List.of("/api/**"));
