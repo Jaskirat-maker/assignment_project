@@ -48,11 +48,13 @@ class DashboardServiceImplTest {
         FinancialRecord incomeRecord = FinancialRecord.builder()
                 .amount(BigDecimal.valueOf(1000.00))
                 .type(TransactionType.INCOME)
+                .transactionDate(LocalDate.now())
                 .build();
 
         FinancialRecord expenseRecord = FinancialRecord.builder()
                 .amount(BigDecimal.valueOf(500.00))
                 .type(TransactionType.EXPENSE)
+                .transactionDate(LocalDate.now())
                 .build();
 
         records = List.of(incomeRecord, expenseRecord);
@@ -62,7 +64,7 @@ class DashboardServiceImplTest {
     void getDashboardSummary_ShouldReturnCorrectSummary() {
         // Given
         when(userRepository.findByUsername("testuser")).thenReturn(java.util.Optional.of(user));
-        when(financialRecordRepository.findByUserId(1L)).thenReturn(records);
+        when(financialRecordRepository.findByUserIdAndDeletedFalse(1L)).thenReturn(records);
 
         // When
         DashboardSummaryResponse response = dashboardService.getDashboardSummary("testuser");

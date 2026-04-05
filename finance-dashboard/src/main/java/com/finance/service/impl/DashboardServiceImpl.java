@@ -2,6 +2,7 @@ package com.finance.service.impl;
 
 import com.finance.dto.response.DashboardSummaryResponse;
 import com.finance.dto.response.FinancialRecordResponse;
+import com.finance.dto.response.UserSummary;
 import com.finance.entity.FinancialRecord;
 import com.finance.entity.User;
 import com.finance.entity.enums.TransactionType;
@@ -39,7 +40,7 @@ public class DashboardServiceImpl implements DashboardService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        List<FinancialRecord> records = financialRecordRepository.findByUserId(user.getId());
+        List<FinancialRecord> records = financialRecordRepository.findByUserIdAndDeletedFalse(user.getId());
 
         BigDecimal totalIncome = records.stream()
                 .filter(r -> r.getType() == TransactionType.INCOME)
@@ -68,7 +69,7 @@ public class DashboardServiceImpl implements DashboardService {
             LocalDate monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
 
             List<FinancialRecord> monthlyRecords = financialRecordRepository
-                    .findByUserIdAndTransactionDateBetween(user.getId(), monthStart, monthEnd);
+                    .findByUserIdAndTransactionDateBetweenAndDeletedFalse(user.getId(), monthStart, monthEnd);
 
             BigDecimal monthlyIncome = monthlyRecords.stream()
                     .filter(r -> r.getType() == TransactionType.INCOME)
@@ -122,6 +123,20 @@ public class DashboardServiceImpl implements DashboardService {
                 .category(record.getCategory())
                 .transactionDate(record.getTransactionDate())
                 .createdAt(record.getCreatedAt())
+                .updatedAt(record.getUpdatedAt())
+                .createdBy(toUserSummary(record.getCreatedBy()))
+                .updatedBy(toUserSummary(record.getUpdatedBy()))
+                .build();
+    }
+
+    private UserSummary toUserSummary(User user) {
+        if (user == null) {
+            return null;
+        }
+
+        return UserSummary.builder()
+                .id(user.getId())
+                .name(user.getUsername())
                 .build();
     }
 

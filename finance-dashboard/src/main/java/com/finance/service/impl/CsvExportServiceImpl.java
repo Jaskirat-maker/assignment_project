@@ -26,10 +26,10 @@ public class CsvExportServiceImpl implements CsvExportService {
 
     @Override
     public byte[] exportUserRecords(String username) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameAndDeletedFalse(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        List<FinancialRecord> records = financialRecordRepository.findByUserId(user.getId());
+        List<FinancialRecord> records = financialRecordRepository.findByUserIdAndDeletedFalse(user.getId());
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try (PrintWriter writer = new PrintWriter(outputStream);

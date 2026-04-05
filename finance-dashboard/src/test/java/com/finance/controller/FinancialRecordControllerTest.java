@@ -4,7 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.dto.request.FinancialRecordRequest;
 import com.finance.dto.response.FinancialRecordResponse;
 import com.finance.entity.enums.TransactionType;
+import com.finance.service.CsvExportService;
 import com.finance.service.FinancialRecordService;
+import com.finance.security.JwtTokenProvider;
+import com.finance.service.RefreshTokenService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -34,6 +37,15 @@ class FinancialRecordControllerTest {
 
     @MockBean
     private FinancialRecordService financialRecordService;
+
+    @MockBean
+    private CsvExportService csvExportService;
+
+    @MockBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockBean
+    private RefreshTokenService refreshTokenService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -122,7 +134,7 @@ class FinancialRecordControllerTest {
 
         Page<FinancialRecordResponse> page = new PageImpl<>(List.of(record), PageRequest.of(0, 10), 1);
 
-        when(financialRecordService.getAllRecordsByUser(eq("testuser"), isNull(), isNull(), isNull(), isNull(), any()))
+        when(financialRecordService.getAllRecordsByUser(eq("testuser"), isNull(), isNull(), isNull(), isNull(), isNull(), any()))
                 .thenReturn(page);
 
         // When & Then

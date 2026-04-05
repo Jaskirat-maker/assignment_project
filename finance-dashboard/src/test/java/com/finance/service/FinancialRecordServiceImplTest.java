@@ -31,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -105,7 +106,7 @@ class FinancialRecordServiceImplTest {
     @Test
     void getRecordById_ShouldReturnRecord_WhenRecordBelongsToUser() {
         // Given
-        when(financialRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+        when(financialRecordRepository.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(record));
 
         // When
         FinancialRecordResponse response = financialRecordService.getRecordById(1L, "testuser");
@@ -120,7 +121,7 @@ class FinancialRecordServiceImplTest {
         // Given
         User differentUser = User.builder().username("otheruser").build();
         FinancialRecord differentRecord = FinancialRecord.builder().user(differentUser).build();
-        when(financialRecordRepository.findById(1L)).thenReturn(Optional.of(differentRecord));
+        when(financialRecordRepository.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(differentRecord));
 
         // When & Then
         assertThatThrownBy(() -> financialRecordService.getRecordById(1L, "testuser"))
@@ -131,7 +132,7 @@ class FinancialRecordServiceImplTest {
     @Test
     void getRecordById_ShouldThrowResourceNotFoundException_WhenRecordNotFound() {
         // Given
-        when(financialRecordRepository.findById(1L)).thenReturn(Optional.empty());
+        when(financialRecordRepository.findByIdAndDeletedFalse(1L)).thenReturn(Optional.empty());
 
         // When & Then
         assertThatThrownBy(() -> financialRecordService.getRecordById(1L, "testuser"))
@@ -142,13 +143,14 @@ class FinancialRecordServiceImplTest {
     @Test
     void deleteRecord_ShouldCallRepositoryDelete_WhenAuthorized() {
         // Given
-        when(financialRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+        when(financialRecordRepository.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(record));
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
 
         // When
         financialRecordService.deleteRecord(1L, "testuser");
 
         // Then
-        verify(financialRecordRepository).delete(record);
+        verify(financialRecordRepository).save(record);
     }
 
     @Test
@@ -156,7 +158,8 @@ class FinancialRecordServiceImplTest {
         // Given
         User differentUser = User.builder().username("otheruser").build();
         FinancialRecord differentRecord = FinancialRecord.builder().user(differentUser).build();
-        when(financialRecordRepository.findById(1L)).thenReturn(Optional.of(differentRecord));
+        when(financialRecordRepository.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(differentRecord));
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
 
         // When & Then
         assertThatThrownBy(() -> financialRecordService.deleteRecord(1L, "testuser"))
@@ -173,7 +176,7 @@ class FinancialRecordServiceImplTest {
         when(financialRecordRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
 
         // When
-        var response = financialRecordService.getAllRecordsByUser("testuser", null, null, null, null, pageable);
+        var response = financialRecordService.getAllRecordsByUser("testuser", null, null, null, null, null, pageable);
 
         // Then
         assertThat(response).isNotNull();

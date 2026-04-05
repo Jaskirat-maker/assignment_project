@@ -9,6 +9,11 @@ import java.time.LocalDate;
 
 public class FinancialRecordSpecification {
 
+    public static Specification<FinancialRecord> isNotDeleted() {
+        return (root, query, criteriaBuilder) ->
+            criteriaBuilder.isFalse(root.get("deleted"));
+    }
+
     public static Specification<FinancialRecord> hasUserId(Long userId) {
         return (root, query, criteriaBuilder) ->
             criteriaBuilder.equal(root.get("user").get("id"), userId);
@@ -22,6 +27,16 @@ public class FinancialRecordSpecification {
     public static Specification<FinancialRecord> hasCategory(String category) {
         return (root, query, criteriaBuilder) ->
             criteriaBuilder.equal(root.get("category"), category);
+    }
+
+    public static Specification<FinancialRecord> hasSearchTerm(String search) {
+        return (root, query, criteriaBuilder) -> {
+            String pattern = "%" + search.toLowerCase() + "%";
+            Predicate titleMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), pattern);
+            Predicate descriptionMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), pattern);
+            Predicate categoryMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("category")), pattern);
+            return criteriaBuilder.or(titleMatch, descriptionMatch, categoryMatch);
+        };
     }
 
     public static Specification<FinancialRecord> hasTransactionDateAfterOrEqual(LocalDate startDate) {
