@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -29,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
+@Import(UserControllerTest.MethodSecurityTestConfig.class)
 class UserControllerTest {
 
     @Autowired
@@ -127,5 +130,18 @@ class UserControllerTest {
                 .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isActive").value(false));
+    }
+
+    @Test
+    @WithMockUser(username = "viewer", authorities = {"VIEWER"})
+    void patchStatus_shouldReturn403_forNonAdmin() throws Exception {
+        mockMvc.perform(patch("/api/v1/users/3/status")
+                        .param("active", "false")
+                        .with(csrf()))
+                .andExpect(status().isForbidden());
+    }
+
+    @EnableMethodSecurity
+    static class MethodSecurityTestConfig {
     }
 }

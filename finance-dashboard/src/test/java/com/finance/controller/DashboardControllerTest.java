@@ -2,6 +2,7 @@ package com.finance.controller;
 
 import com.finance.dto.response.DashboardSummaryResponse;
 import com.finance.dto.response.FinancialRecordResponse;
+import com.finance.config.RateLimitProperties;
 import com.finance.security.JwtTokenProvider;
 import com.finance.service.DashboardService;
 import com.finance.service.RefreshTokenService;
@@ -36,6 +37,9 @@ class DashboardControllerTest {
 
     @MockBean
     private RefreshTokenService refreshTokenService;
+
+    @MockBean
+    private RateLimitProperties rateLimitProperties;
 
     @Test
     @WithMockUser(username = "testuser", authorities = {"VIEWER"})

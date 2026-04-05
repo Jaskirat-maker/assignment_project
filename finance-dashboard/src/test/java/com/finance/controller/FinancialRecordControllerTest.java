@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.dto.request.FinancialRecordRequest;
 import com.finance.dto.response.FinancialRecordResponse;
 import com.finance.entity.enums.TransactionType;
+import com.finance.config.RateLimitProperties;
 import com.finance.service.CsvExportService;
 import com.finance.service.FinancialRecordService;
 import com.finance.security.JwtTokenProvider;
@@ -46,6 +47,12 @@ class FinancialRecordControllerTest {
 
     @MockBean
     private RefreshTokenService refreshTokenService;
+
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+
+    @MockBean
+    private RateLimitProperties rateLimitProperties;
 
     @Autowired
     private ObjectMapper objectMapper;
