@@ -9,6 +9,11 @@ import java.time.LocalDate;
 
 public class FinancialRecordSpecification {
 
+    public static Specification<FinancialRecord> isNotDeleted() {
+        return (root, query, criteriaBuilder) ->
+            criteriaBuilder.isFalse(root.get("deleted"));
+    }
+
     public static Specification<FinancialRecord> hasUserId(Long userId) {
         return (root, query, criteriaBuilder) ->
             criteriaBuilder.equal(root.get("user").get("id"), userId);

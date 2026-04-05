@@ -6,7 +6,9 @@ import com.finance.dto.response.JwtResponse;
 import com.finance.entity.RefreshToken;
 import com.finance.entity.User;
 import com.finance.entity.enums.Role;
+import com.finance.exception.AuthenticationFailureException;
 import com.finance.exception.BadRequestException;
+import com.finance.exception.ConflictException;
 import com.finance.repository.UserRepository;
 import com.finance.security.JwtTokenProvider;
 import com.finance.service.AuthService;
@@ -14,6 +16,7 @@ import com.finance.service.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -37,10 +40,10 @@ public class AuthServiceImpl implements AuthService {
     public JwtResponse register(RegisterRequest request) {
         log.info("Registering user: {}", request.getUsername());
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new BadRequestException("Username is already taken");
+            throw new ConflictException("Username '" + request.getUsername() + "' is already taken");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BadRequestException("Email is already in use");
+            throw new ConflictException("Email '" + request.getEmail() + "' is already in use");
         }
 
         User user = User.builder()
@@ -60,23 +63,28 @@ public class AuthServiceImpl implements AuthService {
                 .token(token)
                 .username(user.getUsername())
                 .email(user.getEmail())
-                .role(user.getRole().name())
+                .primaryRole(user.getRole().name())
                 .refreshToken(refreshToken.getToken())
                 .build();
     }
 
     @Override
     public JwtResponse login(LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+            );
+        } catch (BadCredentialsException exception) {
+            throw new AuthenticationFailureException("Invalid username or password");
+        }
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         String token = jwtTokenProvider.generateToken(request.getUsername());
 
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new BadRequestException("User not found"));
+                .orElseThrow(() -> new AuthenticationFailureException("User account not found"));
 
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
@@ -84,7 +92,7 @@ public class AuthServiceImpl implements AuthService {
                 .token(token)
                 .username(user.getUsername())
                 .email(user.getEmail())
-                .role(user.getRole().name())
+                .primaryRole(user.getRole().name())
                 .refreshToken(refreshToken.getToken())
                 .build();
     }
@@ -106,7 +114,7 @@ public class AuthServiceImpl implements AuthService {
                 .refreshToken(newRefreshToken.getToken())
                 .username(user.getUsername())
                 .email(user.getEmail())
-                .role(user.getRole().name())
+                .primaryRole(user.getRole().name())
                 .build();
     }
 
@@ -114,7 +122,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void logout(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new BadRequestException("User not found"));
+                .orElseThrow(() -> new BadRequestException("User account not found"));
         refreshTokenService.deleteByUserId(user.getId());
     }
 

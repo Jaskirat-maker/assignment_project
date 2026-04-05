@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.stream.Collectors;
+import com.finance.dto.response.UserSummary;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +47,8 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
                 .category(request.getCategory())
                 .transactionDate(request.getTransactionDate())
                 .user(user)
+                .createdBy(user)
+                .updatedBy(user)
                 .build();
 
         financialRecordRepository.save(record);
@@ -55,7 +57,7 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
 
     @Override
     public FinancialRecordResponse getRecordById(Long id, String username) {
-        FinancialRecord record = financialRecordRepository.findById(id)
+        FinancialRecord record = financialRecordRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Financial record not found with id: " + id));
 
         if (!record.getUser().getUsername().equals(username)) {
@@ -70,7 +72,8 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        Specification<FinancialRecord> spec = Specification.where(FinancialRecordSpecification.hasUserId(user.getId()));
+        Specification<FinancialRecord> spec = Specification.where(FinancialRecordSpecification.isNotDeleted())
+                .and(FinancialRecordSpecification.hasUserId(user.getId()));
 
         if (type != null) {
             spec = spec.and(FinancialRecordSpecification.hasType(type));
@@ -94,8 +97,10 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
     @CacheEvict(value = "dashboardSummary", key = "#username")
     public FinancialRecordResponse updateRecord(Long id, FinancialRecordRequest request, String username) {
         log.info("Updating financial record id {} for user {}", id, username);
-        FinancialRecord record = financialRecordRepository.findById(id)
+        FinancialRecord record = financialRecordRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Financial record not found with id: " + id));
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (!record.getUser().getUsername().equals(username)) {
             throw new BadRequestException("Access denied");
@@ -107,6 +112,7 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
         record.setType(request.getType());
         record.setCategory(request.getCategory());
         record.setTransactionDate(request.getTransactionDate());
+        record.setUpdatedBy(user);
 
         financialRecordRepository.save(record);
         return mapToResponse(record);
@@ -117,14 +123,18 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
     @CacheEvict(value = "dashboardSummary", key = "#username")
     public void deleteRecord(Long id, String username) {
         log.info("Deleting financial record id {} for user {}", id, username);
-        FinancialRecord record = financialRecordRepository.findById(id)
+        FinancialRecord record = financialRecordRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Financial record not found with id: " + id));
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (!record.getUser().getUsername().equals(username)) {
             throw new BadRequestException("Access denied");
         }
 
-        financialRecordRepository.delete(record);
+        record.softDelete(user);
+        financialRecordRepository.save(record);
     }
 
     @Override
@@ -132,7 +142,8 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        Specification<FinancialRecord> spec = Specification.where(FinancialRecordSpecification.hasUserId(user.getId()))
+        Specification<FinancialRecord> spec = Specification.where(FinancialRecordSpecification.isNotDeleted())
+                .and(FinancialRecordSpecification.hasUserId(user.getId()))
                 .and(FinancialRecordSpecification.hasType(type));
 
         Page<FinancialRecord> records = financialRecordRepository.findAll(spec, pageable);
@@ -149,6 +160,20 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
                 .category(record.getCategory())
                 .transactionDate(record.getTransactionDate())
                 .createdAt(record.getCreatedAt())
+                .updatedAt(record.getUpdatedAt())
+                .createdBy(toUserSummary(record.getCreatedBy()))
+                .updatedBy(toUserSummary(record.getUpdatedBy()))
+                .build();
+    }
+
+    private UserSummary toUserSummary(User user) {
+        if (user == null) {
+            return null;
+        }
+
+        return UserSummary.builder()
+                .id(user.getId())
+                .name(user.getUsername())
                 .build();
     }
 

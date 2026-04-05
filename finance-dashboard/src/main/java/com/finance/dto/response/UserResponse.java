@@ -23,6 +23,10 @@ public class UserResponse {
 
     private Boolean isActive;
 
+    private LocalDateTime updatedAt;
+
+    private LocalDateTime deletedAt;
+
     private LocalDateTime createdAt;
 
 }
