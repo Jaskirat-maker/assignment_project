@@ -44,7 +44,6 @@ class AuthControllerTest {
 
     @MockBean
     private RateLimitProperties rateLimitProperties;
-
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -204,20 +203,21 @@ class AuthControllerTest {
     }
 
     @Test
-    void login_ShouldReturn400_WhenInvalidCredentials() throws Exception {
+    void login_ShouldReturn401_WhenInvalidCredentials() throws Exception {
         LoginRequest request = LoginRequest.builder()
                 .username("baduser")
                 .password("wrongpass")
                 .build();
 
-        when(authService.login(any(LoginRequest.class))).thenThrow(new com.finance.exception.BadRequestException("Invalid credentials"));
+        when(authService.login(any(LoginRequest.class)))
+                .thenThrow(new com.finance.exception.AuthenticationFailureException("Invalid username or password"));
 
         mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))
                 .with(csrf()))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Invalid credentials"));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTHENTICATION_FAILED"));
     }
 
 }
