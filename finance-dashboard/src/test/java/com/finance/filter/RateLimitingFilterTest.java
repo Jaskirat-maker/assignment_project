@@ -27,7 +27,7 @@ class RateLimitingFilterTest {
         properties.setWindowSeconds(60);
         properties.setIncludePaths(java.util.List.of("/api/**"));
 
-        rateLimitingFilter = new RateLimitingFilter(properties, new ObjectMapper());
+        rateLimitingFilter = new RateLimitingFilter(properties, new ObjectMapper().findAndRegisterModules());
     }
 
     @Test
