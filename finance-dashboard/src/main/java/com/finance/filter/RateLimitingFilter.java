@@ -98,6 +98,11 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             return false;
         }
 
+        // Web slice tests may mock this bean without stubbing defaults.
+        if (rateLimitProperties.getIncludePaths() == null || rateLimitProperties.getIncludePaths().isEmpty()) {
+            return false;
+        }
+
         String requestUri = request.getRequestURI();
         return rateLimitProperties.getIncludePaths().stream()
                 .anyMatch(pattern -> pathMatcher.match(pattern, requestUri));
