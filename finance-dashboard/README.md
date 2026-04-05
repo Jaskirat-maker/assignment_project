@@ -2,6 +2,11 @@
 
 A Spring Boot 3.2.3 application providing secure financial record management with role-based access control.
 
+## Documentation
+- API reference: `docs/API_DOCUMENTATION.md`
+- System design: `docs/SYSTEM_DESIGN.md`
+- End-to-end workflow: `docs/WORKFLOW.md`
+
 ## Features
 - JWT authentication with access + refresh tokens
 - User roles: VIEWER, ANALYST, ADMIN
