@@ -29,6 +29,16 @@ public class FinancialRecordSpecification {
             criteriaBuilder.equal(root.get("category"), category);
     }
 
+    public static Specification<FinancialRecord> hasSearchTerm(String search) {
+        return (root, query, criteriaBuilder) -> {
+            String pattern = "%" + search.toLowerCase() + "%";
+            Predicate titleMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), pattern);
+            Predicate descriptionMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), pattern);
+            Predicate categoryMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("category")), pattern);
+            return criteriaBuilder.or(titleMatch, descriptionMatch, categoryMatch);
+        };
+    }
+
     public static Specification<FinancialRecord> hasTransactionDateAfterOrEqual(LocalDate startDate) {
         return (root, query, criteriaBuilder) ->
             criteriaBuilder.greaterThanOrEqualTo(root.get("transactionDate"), startDate);

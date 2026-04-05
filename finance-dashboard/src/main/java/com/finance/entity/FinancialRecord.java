@@ -64,9 +64,18 @@ public class FinancialRecord {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    public void softDelete() {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private User createdBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "updated_by")
+    private User updatedBy;
+
+    public void softDelete(User actor) {
         this.deleted = true;
         this.deletedAt = LocalDateTime.now();
+        this.updatedBy = actor;
     }
 
 }

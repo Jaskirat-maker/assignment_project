@@ -6,8 +6,10 @@ import com.finance.dto.response.JwtResponse;
 import com.finance.entity.User;
 import com.finance.entity.enums.Role;
 import com.finance.exception.BadRequestException;
+import com.finance.exception.ConflictException;
 import com.finance.repository.UserRepository;
 import com.finance.security.JwtTokenProvider;
+import com.finance.service.RefreshTokenService;
 import com.finance.service.impl.AuthServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,6 +44,9 @@ class AuthServiceImplTest {
 
     @Mock
     private JwtTokenProvider jwtTokenProvider;
+
+    @Mock
+    private RefreshTokenService refreshTokenService;
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -81,6 +86,9 @@ class AuthServiceImplTest {
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(jwtTokenProvider.generateToken(anyString())).thenReturn("jwtToken");
+        when(refreshTokenService.createRefreshToken(any())).thenReturn(
+                com.finance.entity.RefreshToken.builder().token("refreshToken").user(user).build()
+        );
 
         // When
         JwtResponse response = authService.register(registerRequest);
@@ -90,7 +98,7 @@ class AuthServiceImplTest {
         assertThat(response.getToken()).isEqualTo("jwtToken");
         assertThat(response.getUsername()).isEqualTo("testuser");
         assertThat(response.getEmail()).isEqualTo("test@example.com");
-        assertThat(response.getRole()).isEqualTo("ANALYST");
+        assertThat(response.getPrimaryRole()).isEqualTo("ANALYST");
         verify(userRepository).save(any(User.class));
     }
 
@@ -101,8 +109,8 @@ class AuthServiceImplTest {
 
         // When & Then
         assertThatThrownBy(() -> authService.register(registerRequest))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessage("Username is already taken");
+                .isInstanceOf(ConflictException.class)
+                .hasMessage("Username 'testuser' is already taken");
     }
 
     @Test
@@ -113,8 +121,8 @@ class AuthServiceImplTest {
 
         // When & Then
         assertThatThrownBy(() -> authService.register(registerRequest))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessage("Email is already in use");
+                .isInstanceOf(ConflictException.class)
+                .hasMessage("Email 'test@example.com' is already in use");
     }
 
     @Test
@@ -125,6 +133,9 @@ class AuthServiceImplTest {
                 .thenReturn(authentication);
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
         when(jwtTokenProvider.generateToken("testuser")).thenReturn("jwtToken");
+        when(refreshTokenService.createRefreshToken(any())).thenReturn(
+                com.finance.entity.RefreshToken.builder().token("refreshToken").user(user).build()
+        );
 
         // When
         JwtResponse response = authService.login(loginRequest);

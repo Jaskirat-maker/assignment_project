@@ -6,6 +6,8 @@ import com.finance.dto.request.RefreshTokenRequest;
 import com.finance.dto.request.RegisterRequest;
 import com.finance.dto.response.JwtResponse;
 import com.finance.service.AuthService;
+import com.finance.security.JwtTokenProvider;
+import com.finance.service.RefreshTokenService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -28,6 +30,15 @@ class AuthControllerTest {
     @MockBean
     private AuthService authService;
 
+    @MockBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockBean
+    private RefreshTokenService refreshTokenService;
+
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -44,7 +55,7 @@ class AuthControllerTest {
                 .token("jwtToken")
                 .username("testuser")
                 .email("test@example.com")
-                .role("ANALYST")
+                .primaryRole("ANALYST")
                 .build();
 
         when(authService.register(any(RegisterRequest.class))).thenReturn(response);

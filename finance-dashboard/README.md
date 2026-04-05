@@ -5,12 +5,12 @@ A Spring Boot 3.2.3 application providing secure financial record management wit
 ## Features
 - JWT authentication with access + refresh tokens
 - User roles: VIEWER, ANALYST, ADMIN
-- CRUD for financial records (create/update/delete by owner; view with filters and pagination)
-- Dashboard summary with total income/expense/net worth
+- CRUD for financial records (soft-delete for removals, filters, pagination, and keyword search)
+- Dashboard summary with total income/expense/net balance
 - Recent transactions and weekly trend analytics
 - Data export to CSV
 - Caffeine caching for dashboard summary
-- Exception handling and validation
+- Exception handling and validation with structured API errors
 - OpenAPI docs at `/swagger-ui/index.html`
 
 ## Running Locally
@@ -24,6 +24,18 @@ A Spring Boot 3.2.3 application providing secure financial record management wit
 - POST `/api/v1/auth/login`
 - POST `/api/v1/auth/refresh`
 - POST `/api/v1/auth/logout`
+
+## Financial Records Search and Filters
+- GET `/api/v1/records?search=rent`
+- Optional query parameters:
+  - `type` (INCOME | EXPENSE)
+  - `category`
+  - `search` (matches title, description, category; case-insensitive)
+  - `startDate` / `endDate` (`yyyy-MM-dd`)
+  - `page`, `size`, `sort`
+
+Example:
+- `/api/v1/records?type=EXPENSE&search=travel&startDate=2026-01-01&endDate=2026-12-31&page=0&size=20`
 
 ## Role-based endpoints
 - `VIEWER`: read dashboard 

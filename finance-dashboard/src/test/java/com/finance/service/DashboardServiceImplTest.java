@@ -62,7 +62,7 @@ class DashboardServiceImplTest {
     void getDashboardSummary_ShouldReturnCorrectSummary() {
         // Given
         when(userRepository.findByUsername("testuser")).thenReturn(java.util.Optional.of(user));
-        when(financialRecordRepository.findByUserId(1L)).thenReturn(records);
+        when(financialRecordRepository.findByUserIdAndDeletedFalse(1L)).thenReturn(records);
 
         // When
         DashboardSummaryResponse response = dashboardService.getDashboardSummary("testuser");

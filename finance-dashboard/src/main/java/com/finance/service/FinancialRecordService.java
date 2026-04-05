@@ -15,7 +15,13 @@ public interface FinancialRecordService {
 
     FinancialRecordResponse getRecordById(Long id, String username);
 
-    Page<FinancialRecordResponse> getAllRecordsByUser(String username, TransactionType type, String category, LocalDate startDate, LocalDate endDate, Pageable pageable);
+    Page<FinancialRecordResponse> getAllRecordsByUser(String username,
+                                                      TransactionType type,
+                                                      String category,
+                                                      String search,
+                                                      LocalDate startDate,
+                                                      LocalDate endDate,
+                                                      Pageable pageable);
 
     FinancialRecordResponse updateRecord(Long id, FinancialRecordRequest request, String username);
 

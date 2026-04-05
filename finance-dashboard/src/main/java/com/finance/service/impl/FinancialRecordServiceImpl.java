@@ -68,7 +68,13 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
     }
 
     @Override
-    public Page<FinancialRecordResponse> getAllRecordsByUser(String username, TransactionType type, String category, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+    public Page<FinancialRecordResponse> getAllRecordsByUser(String username,
+                                                             TransactionType type,
+                                                             String category,
+                                                             String search,
+                                                             LocalDate startDate,
+                                                             LocalDate endDate,
+                                                             Pageable pageable) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -80,6 +86,9 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
         }
         if (category != null) {
             spec = spec.and(FinancialRecordSpecification.hasCategory(category));
+        }
+        if (search != null && !search.isBlank()) {
+            spec = spec.and(FinancialRecordSpecification.hasSearchTerm(search));
         }
         if (startDate != null) {
             spec = spec.and(FinancialRecordSpecification.hasTransactionDateAfterOrEqual(startDate));
