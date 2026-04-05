@@ -57,7 +57,7 @@ class DashboardControllerTest {
                 .andExpect(jsonPath("$.totalIncome").value(1000))
                 .andExpect(jsonPath("$.netBalance").value(500))
                 .andExpect(jsonPath("$.categoryWiseTotals.Salary").value(100))
-                .andExpect(jsonPath("$.weeklyTrends.Week 1").value(250))
+                .andExpect(jsonPath("$.weeklyTrends['Week 1']").value(250))
                 .andExpect(jsonPath("$.recentTransactions").isArray());
     }
 

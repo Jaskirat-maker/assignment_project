@@ -38,7 +38,7 @@ public class FinancialRecordController {
     private final CsvExportService csvExportService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ANALYST','ADMIN')")
     @Operation(summary = "Create financial record", description = "Creates a financial record for the authenticated user.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Record created"),
@@ -89,7 +89,7 @@ public class FinancialRecordController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ANALYST','ADMIN')")
     @Operation(summary = "Update record by id")
     public ResponseEntity<FinancialRecordResponse> updateRecord(@PathVariable Long id, @Valid @RequestBody FinancialRecordRequest request, Authentication authentication) {
         String username = authentication.getName();
@@ -98,7 +98,7 @@ public class FinancialRecordController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ANALYST','ADMIN')")
     @Operation(summary = "Soft-delete record by id")
     public ResponseEntity<Void> deleteRecord(@PathVariable Long id, Authentication authentication) {
         String username = authentication.getName();

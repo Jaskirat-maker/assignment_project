@@ -31,6 +31,8 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
         // Delete existing refresh token for user
         refreshTokenRepository.deleteByUser(user);
+        // Flush delete immediately to avoid unique constraint races on user_id in same transaction.
+        refreshTokenRepository.flush();
 
         RefreshToken refreshToken = RefreshToken.builder()
                 .token(UUID.randomUUID().toString())
