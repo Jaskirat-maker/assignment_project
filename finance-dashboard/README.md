@@ -46,6 +46,13 @@ Example:
 - `VIEWER`: read dashboard 
 - `ANALYST`: CRUD records, dashboard read
 - `ADMIN`: user management and all functionality
+- User admin endpoints:
+  - `GET /api/v1/users`
+  - `GET /api/v1/users/{id}`
+  - `PUT /api/v1/users/{id}` (supports role/status/password updates)
+  - `PATCH /api/v1/users/{id}/status?active=true|false`
+  - `PATCH /api/v1/users/{id}/role?role=VIEWER|ANALYST|ADMIN`
+  - `DELETE /api/v1/users/{id}`
 
 ## Tests
 - `mvn test` runs unit/integration tests

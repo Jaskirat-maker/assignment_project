@@ -89,7 +89,7 @@ Soft-delete strategy:
 - Method-level authorization enforces roles:
   - `VIEWER`: dashboard read
   - `ANALYST`: financial operations
-  - `ADMIN`: user administration
+  - `ADMIN`: user administration (`/api/v1/users` list/get/update/delete, role and active status updates)
 
 ### Session Model
 

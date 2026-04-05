@@ -1,8 +1,11 @@
 package com.finance.service.impl;
 
 import com.finance.dto.request.RegisterRequest;
+import com.finance.dto.request.UserUpdateRequest;
 import com.finance.dto.response.UserResponse;
 import com.finance.entity.User;
+import com.finance.entity.enums.Role;
+import com.finance.exception.ConflictException;
 import com.finance.exception.ResourceNotFoundException;
 import com.finance.repository.UserRepository;
 import com.finance.service.UserService;
@@ -40,14 +43,49 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponse updateUser(Long id, RegisterRequest request) {
+    public UserResponse updateUser(Long id, UserUpdateRequest request) {
         User user = userRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
+        if (!user.getUsername().equals(request.getUsername()) && userRepository.existsByUsername(request.getUsername())) {
+            throw new ConflictException("Username '" + request.getUsername() + "' is already taken");
+        }
+        if (!user.getEmail().equals(request.getEmail()) && userRepository.existsByEmail(request.getEmail())) {
+            throw new ConflictException("Email '" + request.getEmail() + "' is already in use");
+        }
+
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+        if (request.getRole() != null) {
+            user.setRole(request.getRole());
+        }
+        if (request.getIsActive() != null) {
+            user.setIsActive(request.getIsActive());
+        }
 
+        userRepository.save(user);
+        return mapToResponse(user);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updateUserStatus(Long id, Boolean isActive) {
+        User user = userRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        user.setIsActive(isActive);
+        userRepository.save(user);
+        return mapToResponse(user);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updateUserRole(Long id, Role role) {
+        User user = userRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        user.setRole(role);
         userRepository.save(user);
         return mapToResponse(user);
     }

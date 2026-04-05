@@ -110,7 +110,34 @@ For every incoming API request:
 - Endpoint-level authorization:
   - dashboard summary: `VIEWER|ANALYST|ADMIN`
   - records CRUD: `ANALYST|ADMIN`
-  - user management: `ADMIN` (via management authority)
+  - user management: `ADMIN`
+  - profile read (`/users/me`): any authenticated user
+
+## User Administration Workflow (Admin)
+
+### Update user profile (`PUT /api/v1/users/{id}`)
+
+Admin can update:
+
+- `username`
+- `email`
+- `password` (optional)
+- `role` (`VIEWER|ANALYST|ADMIN`)
+- `isActive` (`true|false`)
+
+The service validates username/email uniqueness before persisting updates.
+
+### Update status (`PATCH /api/v1/users/{id}/status?active=true|false`)
+
+1. Admin sends user id and boolean active flag.
+2. Service updates `isActive`.
+3. Updated user profile is returned.
+
+### Update role (`PATCH /api/v1/users/{id}/role?role=VIEWER|ANALYST|ADMIN`)
+
+1. Admin sends user id and target role.
+2. Service updates role.
+3. Updated user profile is returned.
 
 ## Data and State Workflow
 

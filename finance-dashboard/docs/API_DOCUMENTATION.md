@@ -170,7 +170,9 @@ Success:
 
 Updates user by id.
 
-Request body shape is same as register payload.
+Request body supports role/status management:
+
+`{"username":"jane","email":"jane@example.com","password":"optional-new-password","role":"ANALYST","isActive":true}`
 
 Success:
 
@@ -185,6 +187,34 @@ Soft-deletes user.
 Success:
 
 - `204 No Content`
+
+---
+
+#### PATCH `/users/{id}/status` (ADMIN)
+
+Updates user active flag.
+
+Query param:
+
+- `active` (`true` or `false`)
+
+Success:
+
+- `200 OK` with `UserResponse`
+
+---
+
+#### PATCH `/users/{id}/role` (ADMIN)
+
+Updates user role.
+
+Query param:
+
+- `role` (`VIEWER` | `ANALYST` | `ADMIN`)
+
+Success:
+
+- `200 OK` with `UserResponse`
 
 ---
 

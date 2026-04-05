@@ -1,12 +1,14 @@
 package com.finance.controller;
 
-import com.finance.dto.request.RegisterRequest;
+import com.finance.dto.request.UserUpdateRequest;
 import com.finance.dto.response.UserResponse;
+import com.finance.entity.enums.Role;
 import com.finance.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +38,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('PERM_USER_MANAGE')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @Operation(summary = "Get user by id")
     public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
         UserResponse response = userService.getUserById(id);
@@ -44,7 +46,7 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('PERM_USER_MANAGE')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @Operation(summary = "List all users")
     public ResponseEntity<List<UserResponse>> getAllUsers() {
         List<UserResponse> response = userService.getAllUsers();
@@ -52,15 +54,31 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('PERM_USER_MANAGE')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @Operation(summary = "Update user by id")
-    public ResponseEntity<UserResponse> updateUser(@PathVariable Long id, @Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<UserResponse> updateUser(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest request) {
         UserResponse response = userService.updateUser(id, request);
         return ResponseEntity.ok(response);
     }
 
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(summary = "Update user active status")
+    public ResponseEntity<UserResponse> updateUserStatus(@PathVariable Long id, @RequestParam("active") @NotNull Boolean active) {
+        UserResponse response = userService.updateUserStatus(id, active);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/role")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(summary = "Update user role")
+    public ResponseEntity<UserResponse> updateUserRole(@PathVariable Long id, @RequestParam("role") Role role) {
+        UserResponse response = userService.updateUserRole(id, role);
+        return ResponseEntity.ok(response);
+    }
+
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('PERM_USER_MANAGE')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @Operation(summary = "Soft-delete user by id")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
